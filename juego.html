@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Polis: El Guardián de la Constitución</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            overflow: hidden; /* Evita scroll durante el swipe */
+        }
+        h1, h2, .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+        
+        /* Efecto Cristal (Glassmorphism) para las cartas */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Animaciones para deslizar cartas */
+        .swipe-left {
+            transform: translateX(-150%) rotate(-15deg) !important;
+            opacity: 0;
+            transition: all 0.4s ease-out;
+        }
+        .swipe-right {
+            transform: translateX(150%) rotate(15deg) !important;
+            opacity: 0;
+            transition: all 0.4s ease-out;
+        }
+        .swipe-up {
+            transform: translateY(-150%) scale(0.8) !important;
+            opacity: 0;
+            transition: all 0.4s ease-out;
+        }
+
+        .card-enter {
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes slideIn {
+            0% { transform: scale(0.8) translateY(50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* Modal de Feedback */
+        #feedback-modal {
+            transition: opacity 0.3s ease;
+        }
+        .hide { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Emoji gigante responsivo */
+        .emoji-grafico { font-size: 4rem; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4)); }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative">
+
+    <div id="pantalla-inicio" class="flex flex-col items-center text-center p-6 max-w-lg z-10 fade-in">
+        <div class="text-6xl mb-4">🏛️</div>
+        <h1 class="text-4xl md:text-5xl font-cinzel text-yellow-400 mb-2 drop-shadow-lg">La Polis</h1>
+        <h2 class="text-xl md:text-2xl text-blue-200 mb-6 font-semibold">El Guardián de la Constitución</h2>
+        
+        <div class="glass-card rounded-2xl p-6 mb-8 text-left text-sm md:text-base leading-relaxed">
+            <p class="mb-4">Para <strong class="text-yellow-300">Aristóteles</strong>, la política no era un juego sucio, era el arte de buscar el <strong>Bien Común</strong>. Cuando los gobernantes gobiernan para sí mismos, el sistema se corrompe.</p>
+            <p class="mb-4">Hoy, las <strong>Constituciones Nacionales</strong> son la herramienta que inventamos para que mande la <strong class="text-green-400">Ley</strong> y no el <strong class="text-red-400">Capricho</strong> de los hombres.</p>
+            <ul class="list-disc pl-5 text-gray-300 font-medium">
+                <li>Ronda 1: Identificá si la acción es Ley o Capricho.</li>
+                <li>Ronda 2: Descubrí la forma de corrupción (Tiranía, Oligarquía o Demagogia).</li>
+            </ul>
+        </div>
+
+        <button onclick="iniciarJuego()" class="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold py-4 px-10 rounded-full shadow-lg transform hover:scale-105 transition-all text-xl w-full max-w-xs">
+            ¡Entrar a la Asamblea!
+        </button>
+    </div>
+
+    <div id="pantalla-juego" class="hide w-full max-w-md p-4 h-full flex flex-col justify-between">
+        
+        <!-- Header del Juego -->
+        <div class="flex justify-between items-center mt-4">
+            <div class="bg-blue-900 bg-opacity-50 px-4 py-2 rounded-lg border border-blue-500">
+                <span class="text-blue-300 text-sm font-bold uppercase tracking-wider">Ronda <span id="num-ronda">1</span></span>
+            </div>
+            <div class="bg-yellow-900 bg-opacity-50 px-4 py-2 rounded-lg border border-yellow-500">
+                <span class="text-yellow-400 font-bold">Puntos: <span id="puntos" class="text-xl">0</span></span>
+            </div>
+        </div>
+
+        <!-- Barra de Progreso -->
+        <div class="w-full bg-gray-700 rounded-full h-2 mt-4">
+            <div id="barra-progreso" class="bg-blue-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Contenedor de la Carta -->
+        <div class="flex-grow flex items-center justify-center relative w-full mt-4 mb-4" id="card-container">
+            <!-- La carta se inyectará aquí vía JS -->
+        </div>
+
+        <div id="controles-ronda1" class="flex justify-center gap-4 mb-8">
+            <button onclick="procesarRespuesta('capricho')" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-2 rounded-2xl shadow-lg border-b-4 border-red-800 active:border-b-0 active:mt-1 transition-all">
+                <div class="text-2xl mb-1">👎</div>
+                Capricho<br><span class="text-xs font-normal opacity-80">(Corrupción)</span>
+            </button>
+            <button onclick="procesarRespuesta('ley')" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-2 rounded-2xl shadow-lg border-b-4 border-green-800 active:border-b-0 active:mt-1 transition-all">
+                <div class="text-2xl mb-1">👍</div>
+                Ley<br><span class="text-xs font-normal opacity-80">(Bien Común)</span>
+            </button>
+        </div>
+
+        <!-- Controles Ronda 2 (Múltiple) -->
+        <div id="controles-ronda2" class="hide flex-col gap-3 mb-8 w-full">
+            <button onclick="procesarRespuesta('tirania')" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg border-b-4 border-purple-900 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-between">
+                <span>👑 Tiranía</span> <span class="text-xs font-normal opacity-80 text-right">Gobierna 1<br>para sí mismo</span>
+            </button>
+            <button onclick="procesarRespuesta('oligarquia')" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg border-b-4 border-orange-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-between">
+                <span>💰 Oligarquía</span> <span class="text-xs font-normal opacity-80 text-right">Gobiernan pocos<br>(los ricos)</span>
+            </button>
+            <button onclick="procesarRespuesta('demagogia')" class="w-full bg-pink-700 hover:bg-pink-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg border-b-4 border-pink-900 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-between">
+                <span>🎭 Demagogia</span> <span class="text-xs font-normal opacity-80 text-right">Falsa mayoría<br>sin ley</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="feedback-modal" class="hide fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+        <div id="feedback-card" class="glass-card rounded-2xl p-6 max-w-sm w-full text-center transform scale-90 transition-transform duration-300">
+            <div id="feedback-icon" class="text-5xl mb-2">✅</div>
+            <h3 id="feedback-title" class="text-2xl font-cinzel font-bold mb-2">¡Correcto!</h3>
+            <p id="feedback-text" class="text-gray-200 mb-6 text-sm md:text-base leading-relaxed">Explicación aquí.</p>
+            <button onclick="siguienteCarta()" class="bg-white text-blue-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-200 w-full transition-colors">
+                Continuar ➔
+            </button>
+        </div>
+    </div>
+
+    <!-- Pantalla Final -->
+    <div id="pantalla-final" class="hide flex flex-col items-center text-center p-6 max-w-lg z-10 fade-in">
+        <div id="rango-icono" class="text-7xl mb-4">🏆</div>
+        <h1 class="text-4xl font-cinzel text-yellow-400 mb-2">Asamblea Concluida</h1>
+        <p class="text-xl mb-4">Tu puntaje final: <span id="puntaje-final" class="font-bold text-3xl text-white">0</span></p>
+        
+        <div class="glass-card rounded-2xl p-6 mb-8 w-full">
+            <h2 class="font-cinzel text-xl text-yellow-300 mb-2">Tu rango político:</h2>
+            <p id="rango-texto" class="text-2xl font-bold text-white mb-2">Filósofo Rey</p>
+            <p id="rango-desc" class="text-sm text-gray-300">Has demostrado entender perfectamente la esencia de la Constitución.</p>
+        </div>
+
+        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full shadow-lg transition-all w-full">
+            Volver a Jugar
+        </button>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS DE PREGUNTAS ---
+        const preguntas = [
+            // RONDA 1: Ley vs Capricho
+            {
+                ronda: 1,
+                emoji: "🏥",
+                texto: "El Congreso debate y aprueba el presupuesto anual destinando fondos a la educación y salud pública.",
+                respuesta: "ley",
+                explicacion: "El sistema representativo debatiendo para el bienestar general es el ejemplo perfecto de República buscando el Bien Común."
+            },
+            {
+                ronda: 1,
+                emoji: "🤫",
+                texto: "El gobernante clausura un canal de televisión porque los periodistas critican sus negocios personales.",
+                respuesta: "capricho",
+                explicacion: "La Constitución garantiza la libertad de expresión (Art. 14) para evitar que el poder censure por interés propio."
+            },
+            {
+                ronda: 1,
+                emoji: "⚖️",
+                texto: "Un juez condena a la cárcel a un ministro del gobierno tras comprobarse que robó fondos del Estado.",
+                respuesta: "ley",
+                explicacion: "¡Imperio de la Ley! Nadie, ni siquiera los gobernantes, están por encima de la Constitución. Todos somos iguales."
+            },
+            {
+                ronda: 1,
+                emoji: "👑",
+                texto: "El presidente decide por decreto que sus familiares directos no pagarán impuestos nunca más.",
+                respuesta: "capricho",
+                explicacion: "La Constitución Nacional (Art. 16) establece que la igualdad es la base de los impuestos. No hay privilegios de sangre."
+            },
+            {
+                ronda: 1,
+                emoji: "🗳️",
+                texto: "El presidente pierde las elecciones democráticas y entrega el bastón de mando pacíficamente al ganador.",
+                respuesta: "ley",
+                explicacion: "La alternancia en el poder y el respeto a la voluntad popular son pilares de una Constitución democrática sana."
+            },
+            // RONDA 2: Identificar la Corrupción (Tipos de Gobierno Corrupto)
+            {
+                ronda: 2,
+                emoji: "🏰",
+                texto: "El líder del país cierra el Congreso, asume todos los poderes y gobierna solo para aumentar su fortuna personal.",
+                respuesta: "tirania",
+                explicacion: "Tiranía: La Monarquía (gobierno de uno) se corrompe en Tiranía cuando ignora la ley y busca solo su propio beneficio. La Constitución lo previene dividiendo los poderes."
+            },
+            {
+                ronda: 2,
+                emoji: "🛥️",
+                texto: "Un pequeño grupo de los empresarios más millonarios toma el control del Estado y dicta leyes para asfixiar a los pequeños comerciantes.",
+                respuesta: "oligarquia",
+                explicacion: "Oligarquía: La Aristocracia (gobierno de los mejores) se corrompe en Oligarquía cuando gobiernan pocos, pero solo por ser ricos y para los ricos."
+            },
+            {
+                ronda: 2,
+                emoji: "🔥",
+                texto: "Un líder convence a una multitud furiosa de ignorar a los jueces y quitarle violentamente las propiedades a una minoría.",
+                respuesta: "demagogia",
+                explicacion: "Demagogia: Aristóteles advertía que la República se corrompe cuando la mayoría actúa sin respetar la Ley ni los derechos de las minorías."
+            }
+        ];
+
+        // --- ESTADO DEL JUEGO ---
+        let indiceActual = 0;
+        let puntos = 0;
+        let racha = 0; // Para multiplicador de puntos
+        let rondaActual = 1;
+
+        // --- ELEMENTOS DEL DOM ---
+        const pantInicio = document.getElementById('pantalla-inicio');
+        const pantJuego = document.getElementById('pantalla-juego');
+        const pantFinal = document.getElementById('pantalla-final');
+        const cardContainer = document.getElementById('card-container');
+        const modal = document.getElementById('feedback-modal');
+        const controls1 = document.getElementById('controles-ronda1');
+        const controls2 = document.getElementById('controles-ronda2');
+
+        function iniciarJuego() {
+            pantInicio.classList.add('hide');
+            pantInicio.classList.remove('fade-in');
+            pantJuego.classList.remove('hide');
+            pantJuego.classList.add('fade-in');
+            renderizarCarta();
+            actualizarBarra();
+        }
+
+        function renderizarCarta() {
+            if (indiceActual >= preguntas.length) {
+                finalizarJuego();
+                return;
+            }
+
+            const data = preguntas[indiceActual];
+            
+            // Cambiar controles si cambiamos de ronda
+            if (data.ronda !== rondaActual) {
+                rondaActual = data.ronda;
+                document.getElementById('num-ronda').innerText = rondaActual;
+                if (rondaActual === 2) {
+                    controls1.classList.add('hide');
+                    controls1.classList.remove('flex');
+                    controls2.classList.remove('hide');
+                    controls2.classList.add('flex');
+                    
+                    // Alerta rápida de cambio de ronda
+                    alertarCambioRonda();
+                }
+            }
+
+            // Crear el elemento de la carta
+            cardContainer.innerHTML = `
+                <div id="carta-activa" class="glass-card rounded-3xl p-8 w-full max-w-sm card-enter flex flex-col items-center text-center absolute">
+                    <div class="emoji-grafico mb-6">${data.emoji}</div>
+                    <p class="text-lg md:text-xl font-semibold leading-snug">${data.texto}</p>
+                </div>
+            `;
+        }
+
+        function alertarCambioRonda() {
+            const carta = document.getElementById('carta-activa');
+            if(carta) carta.style.display = 'none'; // Ocultar temporalmente
+            
+            document.getElementById('feedback-icon').innerText = "⚠️";
+            document.getElementById('feedback-title').innerText = "¡Atención: Ronda 2!";
+            document.getElementById('feedback-title').classList.replace('text-green-400', 'text-yellow-400');
+            document.getElementById('feedback-text').innerText = "Ahora debes diagnosticar el tipo de corrupción aristotélica. ¿Qué forma degenerada de gobierno representa la situación?";
+            
+            // Modificar temporalmente el botón del modal
+            const btn = modal.querySelector('button');
+            const oldOnclick = btn.getAttribute('onclick');
+            btn.setAttribute('onclick', 'cerrarAlertaRonda()');
+            
+            modal.classList.remove('hide');
+        }
+
+        function cerrarAlertaRonda() {
+            modal.classList.add('hide');
+            const btn = modal.querySelector('button');
+            btn.setAttribute('onclick', 'siguienteCarta()');
+            const carta = document.getElementById('carta-activa');
+            if(carta) carta.style.display = 'flex';
+        }
+
+        function procesarRespuesta(eleccion) {
+            const data = preguntas[indiceActual];
+            const esCorrecto = (eleccion === data.respuesta);
+            const cartaDOM = document.getElementById('carta-activa');
+            
+            // Determinar animación
+            if (rondaActual === 1) {
+                if (eleccion === 'capricho') cartaDOM.classList.add('swipe-left');
+                else cartaDOM.classList.add('swipe-right');
+            } else {
+                cartaDOM.classList.add('swipe-up'); // Para ronda 2, sale por arriba
+            }
+
+            // Calcular puntos
+            if (esCorrecto) {
+                racha++;
+                puntos += (100 * racha); // Multiplicador por racha
+                document.getElementById('puntos').innerText = puntos;
+                document.getElementById('puntos').classList.add('text-green-400');
+                setTimeout(()=> document.getElementById('puntos').classList.remove('text-green-400'), 500);
+            } else {
+                racha = 0; // Rompe la racha
+            }
+
+            // Mostrar Feedback después de la animación
+            setTimeout(() => {
+                mostrarFeedback(esCorrecto, data.explicacion);
+            }, 300);
+        }
+
+        function mostrarFeedback(esCorrecto, explicacion) {
+            const modalTitle = document.getElementById('feedback-title');
+            const modalIcon = document.getElementById('feedback-icon');
+            const modalCard = document.getElementById('feedback-card');
+
+            if (esCorrecto) {
+                modalIcon.innerText = "⚖️";
+                modalTitle.innerText = "¡Veredicto Correcto!";
+                modalTitle.className = "text-2xl font-cinzel font-bold mb-2 text-green-400";
+                modalCard.style.border = "2px solid #4ade80";
+            } else {
+                modalIcon.innerText = "🚨";
+                modalTitle.innerText = "¡Error Constitucional!";
+                modalTitle.className = "text-2xl font-cinzel font-bold mb-2 text-red-400";
+                modalCard.style.border = "2px solid #f87171";
+            }
+
+            document.getElementById('feedback-text').innerHTML = `<strong>Dato Aristotélico:</strong><br><br>${explicacion}`;
+            
+            modal.classList.remove('hide');
+            setTimeout(() => {
+                modalCard.classList.remove('scale-90');
+                modalCard.classList.add('scale-100');
+            }, 10);
+        }
+
+        function siguienteCarta() {
+            const modalCard = document.getElementById('feedback-card');
+            modalCard.classList.remove('scale-100');
+            modalCard.classList.add('scale-90');
+            modal.classList.add('hide');
+
+            indiceActual++;
+            actualizarBarra();
+            renderizarCarta();
+        }
+
+        function actualizarBarra() {
+            const porcentaje = (indiceActual / preguntas.length) * 100;
+            document.getElementById('barra-progreso').style.width = `${porcentaje}%`;
+        }
+
+        function finalizarJuego() {
+            pantJuego.classList.add('hide');
+            pantFinal.classList.remove('hide');
+            
+            document.getElementById('puntaje-final').innerText = puntos;
+            
+            const maxPuntos = 3600; // Aprox con rachas completas
+            let rango, desc, icono;
+
+            if (puntos > 2500) {
+                rango = "Filósofo Rey 👑";
+                desc = "Aristóteles estaría orgulloso. Entiendes perfectamente la división de poderes y el imperio de la ley.";
+                icono = "🏛️";
+            } else if (puntos > 1000) {
+                rango = "Ciudadano de la Polis 🗳️";
+                desc = "Tienes una buena base cívica, pero aún puedes caer en las trampas de la demagogia.";
+                icono = "⚖️";
+            } else {
+                rango = "Peligro Institucional 🚨";
+                desc = "Cuidado. Necesitas repasar la Constitución urgente antes de que se corrompa el sistema.";
+                icono = "🤦‍♂️";
+            }
+
+            document.getElementById('rango-texto').innerText = rango;
+            document.getElementById('rango-desc').innerText = desc;
+            document.getElementById('rango-icono').innerText = icono;
+        }
+    </script>
+</body>
+</html>
